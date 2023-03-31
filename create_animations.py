@@ -83,6 +83,9 @@ if __name__ == '__main__':
             # Compute the rotation matrix from the head, pitch, and roll angles
             rotation_matrix = utils.datatransform.get_rotation_matrix(head, pitch, roll)
 
+            print("rotation_matrix.shape: ", rotation_matrix.shape)
+            print("rotation_matrix: ", rotation_matrix[0])
+
             ### Compute the direction vector of the whale at each time step
             direction_vector = utils.datatransform.get_direction_vector(initial_direction, rotation_matrix)
 
@@ -105,14 +108,16 @@ if __name__ == '__main__':
             # get start time
             start_time = time.time()
 
+            print(f"Creating zoomed out animation for {filename}...")
+
             #### Create the zoomed out animation
             utils.datavisualize.create_zoomed_out_animation(position_estimate,
                                               sampling_rate,
                                               filename,
-                                              step_size=50,
+                                              step_size=200,
                                               figsize=(10, 10),
                                               title='Whale Trajectory',
-                                              colormap='cividis'
+                                              colormap='autumn',
                                               )
 
 

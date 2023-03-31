@@ -8,6 +8,7 @@ import scipy.io    # for reading .mat files
 import numpy as np # for converting .mat files to numpy arrays
 import io          # for reading bytes object output
 
+
 def get_prh_data_from_mat(file):
     """
     Load the .mat file into a numpy array.
@@ -103,8 +104,6 @@ def get_speed_estimate(direction_vector, depth, sampling_rate, surface_speed= 1.
     diving_mask =  angle > np.pi / 6  # diving if the angle is greater than 30 degrees
     diving_mask[-1] = False  # note: for the final index, the angle is not defined, so we set it to False
 
-    # & (indices != len(depth_difference) - 1)  # and if the index is not the last index
-
     # Compute the speed estimate based on whether the whale is diving or not
     speed_estimate = np.where(diving_mask,
                                 depth_difference / direction_vector[:, 2], # if diving, speed = depth difference / z component of direction vector
@@ -140,9 +139,7 @@ def get_position_estimate(velocity_estimate, depth):
     position_estimate = np.cumsum(velocity_estimate,
                                   axis=0 ) # cumulative sum of velocity estimate
 
-
-
-    # add the depth to the position estimate
+    # add the depth to the position estimate to replace the z component of the velocity estimate
     position_estimate[:, 2] = -1 * depth
 
     # add a row of zeros to the beginning of the position estimate
@@ -150,36 +147,5 @@ def get_position_estimate(velocity_estimate, depth):
 
     return position_estimate
 
-
-def get_trajectory_estimate(head, pitch, roll, initial_direction, depth, sampling_rate):
-    """
-    Get the trajectory estimate from the head, pitch, roll, initial direction, depth, and sampling rate.
-    :param head:    The head angle in radians.
-    :param pitch:   The pitch angle in radians.
-    :param roll:    The roll angle in radians.
-    :param initial_direction:  The initial direction vector.
-    :param depth:  The depth in meters.
-    :param sampling_rate:  The sampling rate in frames per second (eg. 1 if data recorded every second).
-    :return:  The trajectory estimates (position vector, speed).
-    """
-
-    # get the rotation matrix from the head, pitch, and roll angles
-    rotation_matrix = get_rotation_matrix(head, pitch, roll)
-
-    # get the direction vector of the whale at each time step
-    direction_vector = get_direction_vector(initial_direction, rotation_matrix)
-
-    # get the speed estimate of the whale at each time step
-    speed_estimate = get_speed_estimate(direction_vector,
-                                              depth,
-                                              sampling_rate)
-
-    # Get the velocity estimate of the whale at each time step
-    velocity_estimate = get_velocity_estimate(speed_estimate, direction_vector)
-
-    # Get the position estimate of the whale at each time step
-    position_estimate = get_position_estimate(velocity_estimate, depth)
-
-    return position_estimate, speed_estimate
 
 
