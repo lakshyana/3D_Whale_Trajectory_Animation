@@ -31,6 +31,8 @@ def get_rotation_matrix(head, pitch, roll):
     :return: The rotation matrix.
     """
 
+    # formula source: http://msl.cs.uiuc.edu/planning/node102.html
+
     # calculate the sin and cosine values for each angle
     sh = np.sin(head)  # sin of head
     ch = np.cos(head)  # cos of head
@@ -39,16 +41,14 @@ def get_rotation_matrix(head, pitch, roll):
     sr = np.sin(roll)  # sin of roll
     cr = np.cos(roll)  # cos of roll
 
-    # formula source: http://msl.cs.uiuc.edu/planning/node102.html
-
     # # construct the rotation matrix
-    rotation_matrix = np.array([[ch*cp,  -ch*sp*sr - sh*cr,  -ch*sp*cr + sh*sr],
-                                [sh*cp,  -sh*sp*sr + ch*cr,  -sh*sp*cr - ch*sr],
-                                [ sp,     cp*sr,             cp*cr]])
+    # rotation_matrix = np.array([[ch*cp,  -ch*sp*sr - sh*cr,  -ch*sp*cr + sh*sr],
+    #                             [sh*cp,  -sh*sp*sr + ch*cr,  -sh*sp*cr - ch*sr],
+    #                             [ sp,     cp*sr,             cp*cr]])
 
-    # rotation_matrix = np.array([[ch*cp,  ch*sp*sr - sh*cr,  ch*sp*cr + sh*sr],
-    #                             [sh*cp,  sh*sp*sr + ch*cr,  sh*sp*cr - ch*sr],
-    #                             [ -sp,     cp*sr,             cp*cr]])
+    rotation_matrix = np.array([[ch*cp,  ch*sp*sr - sh*cr,  ch*sp*cr + sh*sr],
+                                [sh*cp,  sh*sp*sr + ch*cr,  sh*sp*cr - ch*sr],
+                                [ -sp,     cp*sr,             cp*cr]])
 
 
     #  return matrix after reshape into format N x 3 x 3 matrices for multiple orientations
@@ -94,11 +94,11 @@ def get_speed_estimate(direction_vector, depth, sampling_rate, surface_speed= 1.
     # Get the angle of whale's motion with respect to the vertical axis (angle between the direction vector and the vertical axis)
     # to determine if the whale is diving or not
 
-    # Compute the projection of the vector onto the xy plane
+    # Compute the length of the projection of the direction vector onto the xy plane
     xy_projection = np.sqrt(direction_vector[:, 0] ** 2 + direction_vector[:, 1] ** 2)
 
     # Compute the angle between the vector and the xy plane
-    angle = abs(np.arctan2(direction_vector[:, 2], xy_projection))
+    angle = abs(np.arctan(direction_vector[:, 2], xy_projection))
 
     # Compute the speed estimate based on whether the whale is diving or not
     diving_mask =  angle > np.pi / 6  # diving if the angle is greater than 30 degrees

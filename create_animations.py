@@ -39,6 +39,7 @@ if __name__ == '__main__':
     bucket_name  = 'whaleproject' # the bucket name
     directory    = 'PRH_all/'     # the directory to check for PRH files
     subdirectory = 'PRH/'        # the subdirectory to check for PRH files
+    whale_object_path = 'assets/whale.obj'
 
     ##### Other params
     initial_direction = np.array([1, 0, 0])  # unit vector in the x direction
@@ -68,7 +69,6 @@ if __name__ == '__main__':
             # Load the PRH data from Mat file
             prh_data = utils.datatransform.get_prh_data_from_mat(file_object)
 
-
             # Get the orientation angles, depth, sampling rate values from the data
             head  = prh_data['head']          # head angle
             pitch = prh_data['pitch']         # pitch angle
@@ -79,15 +79,11 @@ if __name__ == '__main__':
 
 
             ##### 2. COMPUTE WHALE TRAJECTORY ESTIMATES FOR EACH FILE #####
-
             # Compute the rotation matrix from the head, pitch, and roll angles
-            rotation_matrix = utils.datatransform.get_rotation_matrix(head, pitch, roll)
-
-            print("rotation_matrix.shape: ", rotation_matrix.shape)
-            print("rotation_matrix: ", rotation_matrix[0])
+            rotation_matrices = utils.datatransform.get_rotation_matrix(head, pitch, roll)
 
             ### Compute the direction vector of the whale at each time step
-            direction_vector = utils.datatransform.get_direction_vector(initial_direction, rotation_matrix)
+            direction_vector = utils.datatransform.get_direction_vector(initial_direction, rotation_matrices)
 
             ### Compute the speed estimate of the whale at each time step
             speed_estimate = utils.datatransform.get_speed_estimate(direction_vector,
@@ -105,21 +101,47 @@ if __name__ == '__main__':
 
             ### Get Zoomed out animation of the whale's trajectory
 
+            # # get start time
+            # start_time = time.time()
+            #
+            # print(f"Creating zoomed out animation for {filename}...")
+            #
+            # #### Create the zoomed out animation
+            # utils.datavisualize.create_zoomed_out_animation(position_estimate,
+            #                                   sampling_rate,
+            #                                   filename,
+            #                                   step_size=200,
+            #                                   figsize=(8, 8),
+            #                                   title='Whale Trajectory',
+            #                                   colormap='autumn',
+            #                                   )
+            #
+            #
+            # # get end time
+            # end_time = time.time()
+            #
+            # # get time elapsed to create the animation
+            # time_elapsed = end_time - start_time
+            #
+            # print(f"Time elapsed to create the zoomed out animation: {time_elapsed:.2f} seconds")
+            #
+
+            ### Get Zoomed in animation of the whale's orientation
+
             # get start time
             start_time = time.time()
 
-            print(f"Creating zoomed out animation for {filename}...")
+            print(f"Creating zoomed in animation for {filename}...")
 
-            #### Create the zoomed out animation
-            utils.datavisualize.create_zoomed_out_animation(position_estimate,
-                                              sampling_rate,
-                                              filename,
-                                              step_size=200,
-                                              figsize=(10, 10),
-                                              title='Whale Trajectory',
-                                              colormap='autumn',
-                                              )
+            utils.datavisualize.create_zoomed_in_animation(rotation_matrices,
+                                                           sampling_rate,
+                                                           whale_object_path,
+                                                           filename,
+                                                           step_size=200,
+                                                           title='Whale Orientation',
+                                                           figsize=(8, 8),
 
+                                                              )
 
             # get end time
             end_time = time.time()
@@ -127,7 +149,10 @@ if __name__ == '__main__':
             # get time elapsed to create the animation
             time_elapsed = end_time - start_time
 
-            print(f"Time elapsed to create the zoomed out animation: {time_elapsed:.2f} seconds")
+            print(f"Time elapsed to create the zoomed in animation: {time_elapsed:.2f} seconds")
+
+
+
 
 
 

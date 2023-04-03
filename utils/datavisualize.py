@@ -71,23 +71,18 @@ def create_zoomed_out_animation(position_estimate,
 
         return line,
 
-    # Extract the x, y, and z coordinates from the position estimate.
-    x = position_estimate[:, 0]
-    y = position_estimate[:, 1]
-    z = position_estimate[:, -1]
-
-
-    # Calculate the range of the x, y, and z coordinates.
-    x_range = np.max(x) - np.min(x)
-    y_range = np.max(y) - np.min(y)
-    z_range = np.max(z) - np.min(z)
-
-    # Set the figure size based on the range of the coordinates.
-    figsize = (x_range // 10, y_range // 10, z_range // 10)
+    # Extract  x, y, and z coordinates from the position estimate.
+    x = position_estimate[::step_size, 0] # Use the step size to reduce the number of points plotted.
+    y = position_estimate[::step_size, 1]
+    z = position_estimate[::step_size, -1]
 
     # create a 3d figure with specified viewing angle
-    fig = plt.figure(figsize=(6,6)) # set figure size
+    fig = plt.figure(figsize=figsize) # set figure size
+
     ax = fig.add_subplot(111, projection= '3d') # set 3d projection
+    ax.grid(alpha=0.2)  # set grid transparency
+    ax.set_box_aspect([0.8, 0.8, 1]) # set aspect ratio
+
     ax.view_init(azim=-55, elev=20) # set viewing angle
     ax.set_title(title, fontsize=18) # set title
     # Remove the tick labels from the axes.
@@ -95,18 +90,10 @@ def create_zoomed_out_animation(position_estimate,
     ax.set_yticklabels([])
     ax.set_zticklabels([])
 
-    ax.grid(alpha=0.2) # set grid transparency
-    # # Set the limits of the axes.
-    # ax.set_xlim3d([np.min(x), np.max(x)])
-    # ax.set_ylim3d([np.min(y), np.max(y)])
-    # ax.set_zlim3d([np.min(z), np.max(z)])
-    # # Set size of the figure
-    # fig.set_size_inches(4,4, 4)
-
 
     # Create a 3D scatter plot of the whale's trajectory using the extracted coordinates, with the color of each point
-    scatter = ax.scatter(x[::step_size], y[::step_size], z[::step_size],
-                         c = z[::step_size],  # Set the color of each point to the depth of the point.
+    scatter = ax.scatter(x, y, z,
+                         c = z,  # Set the color of each point to the depth of the point.
                          cmap=plt.get_cmap(colormap),
                          # alpha=0.1,
                          s=10)
@@ -125,12 +112,12 @@ def create_zoomed_out_animation(position_estimate,
                                    fargs=None,
                                    frames=len(x),
                                    # Set the number of frames to the number of positions in the trajectory.
-                                   interval=(1 / sampling_rate) * 1000,  # Set the interval between frames to the sampling rate.
+                                   interval=(1 / sampling_rate) * 1000 * step_size,  # Set the interval between frames to the sampling rate.
                                    blit=True)
 
     # Save the animation as an mp4 file with lower resolution.
     anim.save(f'{filename}_zoomed_out.mp4',
-              dpi=80,  # video resolution
+              dpi=100,  # video resolution
               # set a bitrate to avoid a large file size
               bitrate=-1  # video bitrate of -1
               )  # extra_args is a list of arguments to pass to ffmpeg.
@@ -138,17 +125,14 @@ def create_zoomed_out_animation(position_estimate,
     print('Animation saved as .mp4 file.')
 
 
-
 def create_zoomed_in_animation(rotation_matrices,
-                               pitch,
-                               roll,
-                               head,
                                 sampling_rate,
+                                whale_object_path,
                                 filename,
-                                step_size = 50,
-                                title = 'Whale Trajectory',
-                                figsize = (6, 6),
-                                colormap = 'viridis'):
+                                step_size = 100,
+                                title = 'Whale Orientation',
+                                figsize = (6, 6)
+                                ):
     '''
     This function creates a zoomed out animation of the whale trajectory.
     :param position_estimate: 3D position estimate of the whale
@@ -190,6 +174,7 @@ def create_zoomed_in_animation(rotation_matrices,
         x = new_vertices[:, 0]
         y = new_vertices[:, 1]
         z = new_vertices[:, 2]
+
         plot = ax.plot_trisurf(x, y, triangles, z, shade=True,
                                color='gray')  # Create a plot_trisurf object with the new vertices
 
@@ -244,55 +229,95 @@ def create_zoomed_in_animation(rotation_matrices,
 
         return plot, x_line, y_line, z_line, top_marker, bottom_marker, circle
 
+    # Create the animation
     # Read in the whale object and make corrections for orientation.
-    vertices, triangles = read_obj('whale.obj')
+    rotation_matrices = rotation_matrices[::step_size]
 
-    # create a 3d figure with specified viewing angle
-    fig = plt.figure(figsize=figsize) # set figure size
-    ax = fig.add_subplot(111, projection= '3d') # set 3d projection
-    ax.view_init(azim=-35, elev=25) # set viewing angle
-    ax.set_title(title, fontsize=18) # set title
-    # Remove the tick labels from the axes.
+    vertices, triangles = read_obj(whale_object_path)
+    old_vertices = vertices.copy()
+    # xx = old_vertices[:, 0]
+    # zz = old_vertices[:, 1]
+    # yy = old_vertices[:, 2]
+    #
+    # vertices[:, 0] = -xx
+    # vertices[:, 1] = yy
+    # vertices[:, 2] = zz
+
+    xx = old_vertices[:, 0]
+    yy = old_vertices[:, 1]
+    zz = old_vertices[:, 2]
+
+    vertices[:, 0] = xx
+    vertices[:, 1] = yy
+    vertices[:, 2] = zz
+
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_title(title)
+
+    ax.set_xlim([-350, 350])
+    ax.set_ylim([-350, 350])
+    ax.set_zlim([-350, 350])
+
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.set_zticklabels([])
 
-    ax.grid(alpha=0.4) # set grid transparency
-
-
-    # Create a 3D scatter plot of the whale's trajectory using the extracted coordinates, with the color of each point
-    scatter = ax.scatter(x[::step_size],
-                         y[::step_size],
-                         z[::step_size],
-                         c=z[::step_size],  # Set the color of each point to the depth of the point.
-                         cmap=plt.get_cmap(colormap),
-                         # alpha=0.1,
-                         s=5)
-
-    cb = fig.colorbar(scatter)
-    cb.set_label('Depth', fontsize=15)
-
-    # Create an empty line object that will be used to visualize the whale's current position in the animation.
-    line, = ax.plot([], [], [], marker='o', markersize=20, color='black')
-
-    # Create the animation.
-    anim = animation.FuncAnimation(fig,
-                                   animate,
+    anim = animation.FuncAnimation(fig, animate,
                                    init_func=init,
                                    fargs=None,
-                                   frames=len(x),
-                                   # Set the number of frames to the number of positions in the trajectory.
-                                   interval=(1 / sampling_rate) * 1000,  # Set the interval between frames to the sampling rate.
+                                   frames=len(rotation_matrices),
+                                   interval=(1 / sampling_rate) * 1000 * step_size,
                                    blit=True)
 
+
     # Save the animation as an mp4 file with lower resolution.
-    anim.save(f'{filename}_zoomed_out.mp4',
-              dpi=80,  # video resolution
+    anim.save(f'{filename}_zoomed_in.mp4',
+              # fps=1,  # frames per second
+              dpi=100,  # video resolution
               bitrate=-1  # video bitrate
               )  # extra_args is a list of arguments to pass to ffmpeg.
 
     print('Animation saved as .mp4 file.')
 
+
+
+# def create_depth_animation(depths,
+#                                 sampling_rate,
+#                                 whale_object_path,
+#                                 filename,
+#                                 step_size = 100,
+#                                 title = 'Whale Orientation',
+#                                 figsize = (6, 6)
+#                                 ):
+#     def init():
+#         line.set_data([], [])
+#         return line,
+#
+#     def animate(i):
+#         ax.set_xlim(i / 10 - 20, i / 10 + 60)
+#         line.set_data([i / 10, i / 10], [min_depth, max_depth])
+#         return line,
+#
+#     plot_depth = depth[int(frame_rate * start_time): int(frame_rate * (end_time + 60))]
+#     min_depth, max_depth = (min(-600, min(depth)), 20)
+#
+#     fig = plt.figure(figsize=(anim_width, 4))
+#     ax = fig.add_subplot(111)
+#     ax.set_ylim(min_depth, max_depth)
+#
+#     plot = ax.plot([i / frame_rate for i in range(len(plot_depth))], plot_depth, color='blue')
+#
+#     ax.set_title('Depth')
+#     ax.set_ylabel('Depth (m)')
+#
+#     line, = ax.plot([0, 0], [min_depth, max_depth], color='green')
+#
+#     anim = animation.FuncAnimation(fig, animate, init_func=init, fargs=None,
+#                                    frames=int(frame_rate * end_time) - int(frame_rate * start_time),
+#                                    interval=(1 / frame_rate) * 1000, blit=True)
+#
+#     anim.save(save_path)
 
 
 

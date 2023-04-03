@@ -271,3 +271,35 @@ if __name__ == '__main__':
             #     print("y: ", y[-5:])
             #     print("z: ", z[-5:])
 
+
+
+
+
+
+ # Calculate the range of the x, y, and z coordinates.
+    # x_range = np.max(x) - np.min(x)
+    # y_range = np.max(y) - np.min(y)
+    # z_range = np.max(z) - np.min(z)
+    #
+    # max_range = np.max(x_range, y_range)
+    # aspect_ratio = [1, 1, z_range / max_range]
+
+
+
+#### ASPECT RATIO & Figure Size ####
+    # ratio = int(x_range // y_range)
+    #
+    # print(f'x range: {x_range}')
+    # print(f'y range: {y_range}')
+    # print(f'y / x range: {ratio}')
+
+
+    # Set the figure size based on the range of the coordinates.
+    # size_x , size_y = figsize
+    #
+    # if ratio > 1:
+    #     size_y = size_y / ratio
+    # else:
+    #     size_x = size_x * ratio
+    #
+    # figsize = (size_x, size_y)
