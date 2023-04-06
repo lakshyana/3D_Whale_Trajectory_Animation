@@ -236,11 +236,172 @@ def create_trajectory_animation(position_estimate,
 #     print('Animation saved as .mp4 file.')
 
 
+def create_zoomed_in_animation(rotation_matrices,
+                               direction_vectors,
+                                sampling_rate,
+                                whale_object_path,
+                                filename,
+                                step_size = 100,
+                                title = 'Whale Orientation',
+                                figsize = (6, 6)
+                                ):
+    '''
+    This function creates a zoomed out animation of the whale trajectory.
+    :param position_estimate: 3D position estimate of the whale
+    :param sampling_rate:  sampling rate of the data (eg 10 for data collected every 0.1 seconds)
+    :param filename:  name of the file to save the animation
+    :param step_size: step size to use when plotting the trajectory
+    :param figsize:  figure size
+    :param title:    figure title
+    :param colormap: colormap to use for the visualization
+
+    :return: None (saves animation as .mp4 file)
+    '''
+
+    ### get animation
+    def init():
+        x = vertices[:, 0]
+        y = vertices[:, 1]
+        z = vertices[:, 2]
+        plot = ax.plot_trisurf(x, y, triangles, z, shade=True, color='gray')  # Create a plot_trisurf object
+        return plot,
 
 
+    # animation function. Called sequentially
+    def animate(i):  # Update the plot for each frame of the animation
+        index = i  # Get the index of the current frame
+        ax.clear()  # Clear the plot and set various properties
+        ax.set_title('Whale Orientation')
+        ax.set_xlim([-350, 350])
+        ax.set_ylim([-350, 350])
+        ax.set_zlim([-350, 350])
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_zticklabels([])
+
+        # Get the current rotation matrix
+        rotation_matrix = rotation_matrices[index]
+
+        # new_vertices = np.matmul(vertices, rotation_matrix)  # Apply the rotation matrix to the vertices of the 3D model
+
+        # print("new vertices: ", new_vertices)
+
+        # Extract the x, y, and z coordinates of the new vertices
+        # x = new_vertices[:, 0]
+        # y = new_vertices[:, 1]
+        # z = new_vertices[:, 2]
+
+        x = direction_vectors[index, 0]
+        y = direction_vectors[index, 1]
+        z = direction_vectors[index, 2]
 
 
+        plot = ax.plot_trisurf(x, y, triangles, z, shade=True,
+                               color='gray')  # Create a plot_trisurf object with the new vertices
 
+        # Add in lines coming out of the whale to show orientation.
+        x_line_points_top = np.array([400, 0, 0])
+        y_line_points_top = np.array([0, 400, 0])
+        z_line_points_top = np.array([0, 0, 400])
+
+        rotated_x_line_points_top = np.matmul(x_line_points_top,
+                                              rotation_matrix)  # Apply the rotation matrix to the points of the lines
+        rotated_y_line_points_top = np.matmul(y_line_points_top, rotation_matrix)
+        rotated_z_line_points_top = np.matmul(z_line_points_top, rotation_matrix)
+
+        x_line_points_bottom = np.array([-400, 0, 0])
+        y_line_points_bottom = np.array([0, -400, 0])
+        z_line_points_bottom = np.array([0, 0, -400])
+
+        rotated_x_line_points_bottom = np.matmul(x_line_points_bottom,
+                                                 rotation_matrix)  # Rotate the end points of the up/down lines using the rotation matrix
+        rotated_y_line_points_bottom = np.matmul(y_line_points_bottom, rotation_matrix)
+        rotated_z_line_points_bottom = np.matmul(z_line_points_bottom, rotation_matrix)
+
+
+        # Create plot objects for the up/down, left/right, and front/back lines
+        x_line, = ax.plot([rotated_x_line_points_bottom[0], rotated_x_line_points_top[0]],
+                          [rotated_x_line_points_bottom[1], rotated_x_line_points_top[1]],
+                          [rotated_x_line_points_bottom[2], rotated_x_line_points_top[2]], color='blue')
+
+        y_line, = ax.plot([rotated_y_line_points_bottom[0], rotated_y_line_points_top[0]],
+                          [rotated_y_line_points_bottom[1], rotated_y_line_points_top[1]],
+                          [rotated_y_line_points_bottom[2], rotated_y_line_points_top[2]], color='red')
+
+
+        z_line, = ax.plot([rotated_z_line_points_bottom[0], rotated_z_line_points_top[0]],
+                          [rotated_z_line_points_bottom[1], rotated_z_line_points_top[1]],
+                          [rotated_z_line_points_bottom[2], rotated_z_line_points_top[2]], color='green')
+
+        # Add markers at the endpoints of the up/down lines to indicate the top and bottom of the whale
+        top_marker, = ax.plot([rotated_z_line_points_top[0], rotated_z_line_points_top[0] + 1],
+                              [rotated_z_line_points_top[1], rotated_z_line_points_top[1] + 1],
+                              [rotated_z_line_points_top[2], rotated_z_line_points_top[2] + 1], color='red',
+                              )
+
+        bottom_marker, = ax.plot([rotated_z_line_points_bottom[0], rotated_z_line_points_bottom[0] + 1],
+                                 [rotated_z_line_points_bottom[1], rotated_z_line_points_bottom[1] + 1],
+                                 [rotated_z_line_points_bottom[2], rotated_z_line_points_bottom[2] + 1], color='blue',
+                                )
+
+        # Add a circle in the XY plane of whale frame to show orientation.
+        circle_x = [i * 10 for i in range(-35, 36)]
+        circle_x = circle_x + circle_x[::-1]
+        circle_y = [np.sqrt(122500 - i ** 2) for i in circle_x[:71]] + [-np.sqrt(122500 - i ** 2) for i in
+                                                                          circle_x[71:]]
+        circle_z = [0 for i in circle_x]
+        circle_combined = np.array([circle_x, circle_y, circle_z]).transpose()
+        rotated_circle = np.matmul(circle_combined, rotation_matrix)
+        circle, = ax.plot(rotated_circle[:, 0], rotated_circle[:, 1], rotated_circle[:, 2], color='black')
+
+        return plot, x_line, y_line, z_line, top_marker, bottom_marker, circle
+
+    # Create the animation
+    # Read in the whale object and make corrections for orientation.
+    # rotation_matrices = rotation_matrices[::step_size]
+    rotation_matrices = rotation_matrices[:]
+
+    # rotation_matrices = [np.identity(3)] * 3  # create a single identity matrix to test the animation
+    vertices, triangles = read_obj(whale_object_path)
+
+    old_vertices = vertices.copy()
+    xx = old_vertices[:, 0]
+    zz = old_vertices[:, 1]
+    yy = old_vertices[:, 2]
+    vertices[:, 0] = -xx
+    vertices[:, 1] = yy
+    vertices[:, 2] = zz
+
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_title(title, fontsize=20)
+
+    ax.view_init(azim=-80, elev=5)  # set viewing angle
+
+    ax.set_xlim([-350, 350])
+    ax.set_ylim([-350, 350])
+    ax.set_zlim([-350, 350])
+
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_zticklabels([])
+
+    anim = animation.FuncAnimation(fig, animate,
+                                   init_func=init,
+                                   fargs=None,
+                                   frames=len(rotation_matrices),
+                                   interval=(1 / sampling_rate) * 1000,
+                                   blit=True)
+
+
+    # Save the animation as an mp4 file with lower resolution.
+    anim.save(f'{filename}_zoomed_in.mp4',
+              # fps=1,  # frames per second
+              dpi=100,  # video resolution
+              bitrate=-1  # video bitrate
+              )  # extra_args is a list of arguments to pass to ffmpeg.
+
+    print('Animation saved as .mp4 file.')
 
 
 

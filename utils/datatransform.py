@@ -139,13 +139,15 @@ def get_position_estimate(velocity_estimate, depth):
     position_estimate = np.cumsum(velocity_estimate,
                                   axis=0 ) # cumulative sum of velocity estimate
 
+    z_component = position_estimate[:, 2] # get the z component of the position estimate
+
     # add the depth to the position estimate to replace the z component of the velocity estimate
     position_estimate[:, 2] = -1 * depth
 
     # add a row of zeros to the beginning of the position estimate
     position_estimate = np.vstack((np.zeros(3), position_estimate))
 
-    return position_estimate
+    return position_estimate, z_component
 
 
 
